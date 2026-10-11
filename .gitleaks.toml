@@ -1,0 +1,10 @@
+# gitleaks configuration. Extends the default rules; only adds allowlists.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known non-secrets"
+regexes = [
+  # The example Sec-WebSocket-Key nonce from RFC 6455, used in tests.
+  '''dGhlIHNhbXBsZSBub25jZQ==''',
+]

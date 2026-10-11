@@ -1,0 +1,45 @@
+# Run with prek (https://github.com/j178/prek), not stock pre-commit: the
+# `repo: builtin` block below is prek-only.
+#
+#   sfw uv sync   (pins prek in .venv; see pyproject.toml)
+#   .venv/bin/prek install --hook-type pre-commit --hook-type pre-push
+#   .venv/bin/prek run --all-files
+default_stages: [pre-commit]
+repos:
+  # Secrets. This repo exists to keep secrets out of places they don't
+  # belong; it had better not leak any itself.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: d5c275d6b2140fcb59bc3f58b8dd5350f5b19df6 # v8.24.2
+    hooks:
+      - id: gitleaks
+      - id: gitleaks
+        alias: gitleaks-pre-push
+        name: Detect secrets in outgoing commits
+        entry: bash scripts/pre-commit/gitleaks-pre-push.sh
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false
+        require_serial: true
+
+  - repo: builtin
+    hooks:
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: check-yaml
+      - id: check-json
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  - repo: local
+    hooks:
+      - id: go-check
+        name: gofmt, go vet, go test
+        language: script
+        entry: scripts/pre-commit/go-check.sh
+        files: \.go$|go\.mod$|go\.sum$
+        pass_filenames: false

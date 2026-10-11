@@ -1,0 +1,74 @@
+# Example secproxy config. No secret values live in this file.
+#
+# A sandboxed program holds the placeholders below in its environment. When
+# it sends one to the right host in the right place, the proxy swaps in the
+# real value. Anything else is refused with an explanation.
+
+version: 1
+run_id: example
+
+listen:
+  transparent: ":443"   # raw TLS from a network-level relay (SNI routing)
+  connect: ":8080"      # ordinary HTTPS_PROXY endpoint
+
+ca:
+  cert_out: /run/secproxy/ca.pem   # public cert for the sandbox to trust
+  # persist_dir: ~/.config/secproxy/ca   # laptop use: keep one CA across restarts
+
+# A host is either passed through (raw TLS, no decryption, no secrets), or
+# inspected (decrypted, bindings applied), or refused. Nothing else.
+unmatched_host: deny
+
+egress: # github.com itself is not here: it carries the git binding below
+  - objects.githubusercontent.com
+  - pypi.org
+  - files.pythonhosted.org
+  - registry.npmjs.org
+
+secrets:
+  github:
+    from_env: SP_GITHUB_TOKEN
+    env: GITHUB_TOKEN # what the sandbox calls it
+    # placeholder: omitted here, so one is generated at startup.
+    # An orchestrator that must know the placeholder ahead of time sets it.
+  cloudflare:
+    from_file: /run/secrets/cloudflare_api_token
+    env: CLOUDFLARE_API_TOKEN
+  anthropic:
+    from_env: SP_ANTHROPIC_API_KEY
+    env: ANTHROPIC_API_KEY
+
+bindings:
+  # gh CLI and the REST API: bearer token, no DELETE
+  - secret: github
+    hosts: [api.github.com, uploads.github.com]
+    slot: { header: Authorization, format: "Bearer {secret}" }
+    methods: [GET, POST, PATCH, PUT]
+
+  # git over https sends the token as basic auth. Listing only the
+  # fetch endpoints means push is impossible, not just discouraged.
+  - secret: github
+    hosts: [github.com]
+    slot: { basic: { username: x-access-token, password: "{secret}" } }
+    methods: [GET, POST]
+    paths: ["/*/*/info/refs", "/*/*/git-upload-pack"]
+
+  - secret: cloudflare
+    hosts: [api.cloudflare.com]
+    slot: { header: Authorization, format: "Bearer {secret}" }
+    methods: [GET]
+    paths: ["/client/v4/zones/**"]
+
+  - secret: anthropic
+    hosts: [api.anthropic.com]
+    slot: { header: x-api-key, format: "{secret}" }
+    methods: [POST]
+    paths: ["/v1/messages", "/v1/messages/**"]
+
+  # inject: always adds the secret to every request to the host, placeholder
+  # or not. For programs that cannot be handed a placeholder. A request that
+  # already carries a different value in the slot is refused, not rewritten.
+  # - secret: anthropic
+  #   hosts: [api.anthropic.com]
+  #   slot: { header: x-api-key, format: "{secret}" }
+  #   inject: always

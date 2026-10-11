@@ -1,0 +1,91 @@
+secproxy
+Copyright 2026 Taylor AI, Inc.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This project borrows designs, and in a few places small pieces of code,
+from the following open-source projects. Where code was adapted, the file
+carries a comment saying so. We err on the side of acknowledging.
+
+------------------------------------------------------------------------
+
+Infisical CLI, packages/agentproxy
+https://github.com/Infisical/cli
+Copyright (c) 2025 Infisical Inc.
+MIT License (content outside any "ee/" directory; nothing under "ee/" was used)
+
+Adapted: the connection-limiting listener and one-shot listener shapes
+(internal/proxy/server.go, internal/proxy/inspect.go); the HTTP/1.1-only
+upstream transport with an empty TLSNextProto map (internal/proxy/server.go);
+leaf certificate details: P-256, DNS vs IP SAN, lifetime capped at the
+issuer's expiry, bounded cache (internal/ca/ca.go); TRACE/TRACK rejection
+and pinning the request Host to the tunnel destination
+(internal/proxy/forward.go); the list of certificate and proxy environment
+variables to set for a child process (internal/childenv/childenv.go).
+
+------------------------------------------------------------------------
+
+Infisical Agent Vault
+https://github.com/Infisical/agent-vault
+Copyright (c) 2022 Infisical Inc.
+MIT License (content outside any "ee/" directory; nothing under "ee/" was used)
+
+Adapted: the SSRF-resistant dialer that resolves once, rejects if any DNS
+answer is a blocked address, and dials the vetted IP (internal/netguard);
+the WebSocket upgrade handling: substitute on the handshake, then splice
+(internal/proxy/forward.go); building the audit event before substitution
+so it structurally cannot contain a secret (internal/proxy/forward.go).
+
+------------------------------------------------------------------------
+
+inflightsec/agent-vault-proxy ("kow")
+https://github.com/inflightsec/agent-vault-proxy
+Apache License 2.0
+
+Ideas only, no code: substituting a placeholder only in the one declared
+slot; per-binding method and path restrictions; decrypting only hosts that
+carry a secret and passing the rest through; a strict config schema where
+unknown keys are errors.
+
+------------------------------------------------------------------------
+
+stashbase/agent-proxy
+https://github.com/stashbase/agent-proxy
+Copyright (c) 2026 Stashbase, s.r.o.
+MIT License
+
+Ideas only, no code: the binding shape (secret, hosts, header, env var);
+whole-header exact matching; keeping credential-free egress hosts separate
+from binding hosts.
+
+------------------------------------------------------------------------
+
+Apoxy CLRK
+https://github.com/apoxy-dev/clrk
+AGPL-3.0
+
+Read for reference only. No code or design elements were copied; CLRK's
+license is incompatible with this project and its approach (unconditional
+header overwrite via Envoy) differs from ours.
+
+------------------------------------------------------------------------
+
+The MIT License, as it applies to the Infisical and Stashbase material above:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

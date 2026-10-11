@@ -1,0 +1,8 @@
+/secproxy
+/dist/
+*.pem
+*.key
+.claude
+.venv/
+.DS_Store
+/plans/
